@@ -6,6 +6,10 @@ import 'package:camerawesome/camerawesome_plugin.dart';
 import 'package:camerawesome/pigeon.dart';
 import 'package:minio/minio.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:audioplayers/audioplayers.dart';
+import 'package:ffmpeg_kit_flutter/ffmpeg_kit.dart';
+import 'package:ffmpeg_kit_flutter/return_code.dart';
+import 'package:path_provider/path_provider.dart';
 
 // --- CLOUDFLARE R2 CREDENTIALS (अपनी जानकारी यहाँ भरें) ---
 const String r2Endpoint = "YOUR_ACCOUNT_ID.r2.cloudflarestorage.com";
@@ -88,16 +92,16 @@ class _AppShellState extends State<AppShell> {
     ),
   ];
 
-  void _addNewReel(String uploadedUrl) {
+  void _addNewReel(String uploadedUrl, String songName) {
     setState(() {
       _reels.insert(
         0,
         ReelData(
           id: DateTime.now().millisecondsSinceEpoch.toString(),
           videoUrl: uploadedUrl,
-          username: 'my_creator',
+          username: 'creator_pro',
           caption: 'मेरी नई रील! लाइक और शेयर करें 🔥 #newreel',
-          songTitle: 'Original Audio - my_creator',
+          songTitle: songName,
           likes: 1,
           isLiked: true,
           comments: ['पहला कमेंट! 🔥'],
@@ -297,7 +301,6 @@ class _SingleReelPlayerState extends State<SingleReelPlayer>
               : const Center(
                   child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)),
 
-          // सिनेमैटिक ग्रेडिएंट ओवरले
           Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
@@ -309,7 +312,6 @@ class _SingleReelPlayerState extends State<SingleReelPlayer>
             ),
           ),
 
-          // म्यूट / अनम्यूट इंडिकेटर
           if (_showMuteBadge)
             Center(
               child: Container(
@@ -323,7 +325,6 @@ class _SingleReelPlayerState extends State<SingleReelPlayer>
               ),
             ),
 
-          // उछलता दिल एनीमेशन
           if (_showBigHeart)
             Center(
               child: TweenAnimationBuilder<double>(
@@ -338,7 +339,6 @@ class _SingleReelPlayerState extends State<SingleReelPlayer>
               ),
             ),
 
-          // लेफ्ट साइड: यूजरनेम, कैप्शन, म्यूजिक
           Positioned(
             left: 14,
             bottom: 20,
@@ -396,7 +396,6 @@ class _SingleReelPlayerState extends State<SingleReelPlayer>
             ),
           ),
 
-          // राइट साइड: लाइक, कमेंट, शेयर, डिस्क
           Positioned(
             right: 12,
             bottom: 20,
@@ -452,7 +451,6 @@ class _SingleReelPlayerState extends State<SingleReelPlayer>
                 ),
                 const SizedBox(height: 16),
 
-                // घूमती हुई डिस्क
                 AnimatedBuilder(
                   animation: _discAnimController,
                   builder: (_, child) {
@@ -563,9 +561,9 @@ class _CommentsDrawerState extends State<CommentsDrawer> {
   }
 }
 
-// ------------------- एडवांस्ड कैमरा + लाइव फ़िल्टर्स + R2 अपलोड -------------------
+// ------------------- एडवांस्ड कैमरा + लाइव फ़िल्टर्स + म्यूजिक मिक्सर + R2 अपलोड -------------------
 class AdvancedCameraStudio extends StatefulWidget {
-  final Function(String) onVideoUploaded;
+  final Function(String, String) onVideoUploaded;
   const AdvancedCameraStudio({super.key, required this.onVideoUploaded});
 
   @override
@@ -573,20 +571,136 @@ class AdvancedCameraStudio extends StatefulWidget {
 }
 
 class _AdvancedCameraStudioState extends State<AdvancedCameraStudio> {
-  bool _isUploading = false;
+  bool _isProcessing = false;
+  String _processStatus = '';
   int _selectedFilterIndex = 0;
 
-  final List<Color> _filters = [
-    Colors.transparent,
-    Colors.amber.withOpacity(0.18),
-    Colors.blueAccent.withOpacity(0.15),
-    Colors.purpleAccent.withOpacity(0.15),
+  // म्यूजिक प्लेयर इंजन
+  final AudioPlayer _audioPlayer = AudioPlayer();
+  Map<String, String>? _selectedTrack;
+
+  // लाइव साउंड लाइब्रेरी
+  final List<Map<String, String>> _musicLibrary = [
+    {
+      'title': 'No Music (Original Mic Audio)',
+      'url': '',
+    },
+    {
+      'title': 'Trending Beat - DJ Mix',
+      'url': 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
+    },
+    {
+      'title': 'Lofi Chill Vibes',
+      'url': 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
+    },
+    {
+      'title': 'Acoustic Guitar Sunshine',
+      'url': 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3',
+    },
   ];
 
-  Future<void> _uploadDirectToR2(String localPath) async {
-    setState(() => _isUploading = true);
+  // लाइव कलर फिल्टर्स
+  final List<Color> _filters = [
+    Colors.transparent,
+    Colors.amber.withOpacity(0.2), // Vintage Warm
+    Colors.blueAccent.withOpacity(0.18), // Cold Breeze
+    Colors.purpleAccent.withOpacity(0.18), // Cyberpunk
+    Colors.grey.withOpacity(0.35), // Noir B&W
+  ];
+
+  @override
+  void dispose() {
+    _audioPlayer.dispose();
+    super.dispose();
+  }
+
+  void _openMusicBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.grey[900],
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return Container(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Select Background Music',
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+              const Divider(color: Colors.white24),
+              Expanded(
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: _musicLibrary.length,
+                  itemBuilder: (ctx, i) {
+                    final item = _musicLibrary[i];
+                    return ListTile(
+                      leading: const Icon(Icons.music_note, color: Colors.amberAccent),
+                      title: Text(item['title']!, style: const TextStyle(color: Colors.white, fontSize: 14)),
+                      trailing: IconButton(
+                        icon: const Icon(Icons.play_circle_outline, color: Colors.white70),
+                        onPressed: () {
+                          if (item['url']!.isNotEmpty) {
+                            _audioPlayer.stop();
+                            _audioPlayer.play(UrlSource(item['url']!));
+                          }
+                        },
+                      ),
+                      onTap: () {
+                        setState(() {
+                          _selectedTrack = item;
+                        });
+                        _audioPlayer.stop();
+                        Navigator.pop(ctx);
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  // FFmpeg ऑडियो-वीडियो मिक्सर और R2 अपलोड
+  Future<void> _processAndUpload(String recordedVideoPath) async {
+    setState(() {
+      _isProcessing = true;
+      _processStatus = 'ऑडियो और वीडियो प्रोसेस हो रहा है...';
+    });
+
+    String finalUploadPath = recordedVideoPath;
+    String songTitle = _selectedTrack?['title'] ?? 'Original Audio';
 
     try {
+      // अगर यूजर ने म्यूजिक चुना है, तो FFmpeg से मिक्स करेंगे
+      if (_selectedTrack != null && _selectedTrack!['url']!.isNotEmpty) {
+        setState(() => _processStatus = 'बैकग्राउंड म्यूजिक मिक्स (Muxing) हो रहा है...');
+        
+        final tempDir = await getTemporaryDirectory();
+        final outputPath = '${tempDir.path}/muxed_${DateTime.now().millisecondsSinceEpoch}.mp4';
+        final audioUrl = _selectedTrack!['url']!;
+
+        // FFmpeg कमांड: ओरिजिनल वीडियो का कैमरा वीडियो + नया बैकग्राउंड ऑडियो मिक्स
+        final ffmpegCommand = '-i "$recordedVideoPath" -ss 00:00:00 -i "$audioUrl" -map 0:v -map 1:a -c:v copy -c:a aac -shortest "$outputPath"';
+
+        final session = await FFmpegKit.execute(ffmpegCommand);
+        final returnCode = await session.getReturnCode();
+
+        if (ReturnCode.isSuccess(returnCode)) {
+          finalUploadPath = outputPath;
+        }
+      }
+
+      // Cloudflare R2 पर डायरेक्ट अपलोड
+      setState(() => _processStatus = 'Cloudflare R2 पर डायरेक्ट अपलोड हो रहा है...');
+
       final minio = Minio(
         endPoint: r2Endpoint,
         accessKey: r2AccessKey,
@@ -595,41 +709,50 @@ class _AdvancedCameraStudioState extends State<AdvancedCameraStudio> {
       );
 
       final String fileName = 'reel_${DateTime.now().millisecondsSinceEpoch}.mp4';
-      final file = File(localPath);
+      final file = File(finalUploadPath);
 
       await minio.fPutObject(r2BucketName, fileName, file.path);
       final String publicStreamUrl = "$r2PublicBaseUrl/$fileName";
-      widget.onVideoUploaded(publicStreamUrl);
+
+      widget.onVideoUploaded(publicStreamUrl, songTitle);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('रील Cloudflare R2 पर लाइव हो गई! 🚀')),
+          const SnackBar(content: Text('रील म्यूजिक के साथ सफलतापूर्वक लाइव हो गई! 🚀')),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('अपलोड एरर: $e')),
+          SnackBar(content: Text('प्रोसेस त्रुटि: $e')),
         );
       }
     } finally {
-      if (mounted) setState(() => _isUploading = false);
+      if (mounted) {
+        setState(() {
+          _isProcessing = false;
+          _selectedTrack = null;
+        });
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_isUploading) {
-      return const Scaffold(
+    if (_isProcessing) {
+      return Scaffold(
         backgroundColor: Colors.black,
         body: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              CircularProgressIndicator(color: Colors.orangeAccent),
-              SizedBox(height: 20),
-              Text('Cloudflare R2 पर डायरेक्ट अपलोड जारी है...',
-                  style: TextStyle(color: Colors.white, fontSize: 14)),
+              const CircularProgressIndicator(color: Colors.orangeAccent),
+              const SizedBox(height: 20),
+              Text(
+                _processStatus,
+                style: const TextStyle(color: Colors.white, fontSize: 14),
+                textAlign: TextAlign.center,
+              ),
             ],
           ),
         ),
@@ -646,44 +769,83 @@ class _AdvancedCameraStudioState extends State<AdvancedCameraStudio> {
           previewFit: CameraPreviewFit.cover,
           onMediaTap: (media) {
             if (media.isVideo && media.filePath != null) {
-              _uploadDirectToR2(media.filePath!);
+              _processAndUpload(media.filePath!);
             }
           },
         ),
 
-        // लाइव कलर शेड्स (फिल्टर)
+        // लाइव कलर शेड्स (फिल्टर ओवरले)
         IgnorePointer(
           child: Container(color: _filters[_selectedFilterIndex]),
         ),
 
-        // टॉप फिल्टर स्विच बटन
+        // 1. टॉप म्यूजिक सेलेक्टर बार
         Positioned(
           top: 45,
           left: 0,
           right: 0,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: List.generate(_filters.length, (i) {
-              return GestureDetector(
-                onTap: () => setState(() => _selectedFilterIndex = i),
-                child: Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 5),
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: _selectedFilterIndex == i ? Colors.white : Colors.black45,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    i == 0 ? 'Normal' : 'Filter $i',
-                    style: TextStyle(
-                      color: _selectedFilterIndex == i ? Colors.black : Colors.white,
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
+          child: Center(
+            child: GestureDetector(
+              onTap: _openMusicBottomSheet,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.black54,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: Colors.white30),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.music_note, color: Colors.amberAccent, size: 18),
+                    const SizedBox(width: 8),
+                    Text(
+                      _selectedTrack != null ? _selectedTrack!['title']! : 'Add Music',
+                      style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+
+        // 2. बॉटम लाइव फिल्टर स्विचर बार
+        Positioned(
+          bottom: 120,
+          left: 0,
+          right: 0,
+          child: SizedBox(
+            height: 40,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: _filters.length,
+              itemBuilder: (ctx, i) {
+                final isSelected = _selectedFilterIndex == i;
+                final labels = ['Normal', 'Vintage', 'Cool', 'Cyberpunk', 'Noir'];
+                return GestureDetector(
+                  onTap: () => setState(() => _selectedFilterIndex = i),
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 6),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: isSelected ? Colors.white : Colors.black45,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Center(
+                      child: Text(
+                        labels[i],
+                        style: TextStyle(
+                          color: isSelected ? Colors.black : Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                   ),
-                ),
-              );
-            }),
+                );
+              },
+            ),
           ),
         ),
       ],
