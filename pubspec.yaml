@@ -1,5 +1,5 @@
 name: reels_pro
-description: "Advanced Instagram Reels Clone"
+description: "Advanced Instagram Reels Clone with Audio Mixer and Filters"
 publish_to: "none"
 version: 1.0.0+1
 
@@ -14,6 +14,8 @@ dependencies:
   minio: ^3.0.4
   path_provider: ^2.1.4
   share_plus: ^10.0.2
+  audioplayers: ^6.1.0
+  ffmpeg_kit_flutter: ^6.0.3
 
 flutter:
   uses-material-design: true
