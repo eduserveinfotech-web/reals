@@ -11,7 +11,7 @@ dependencies:
     sdk: flutter
   cached_video_player_plus: ^4.1.0
   camerawesome: ^2.4.0
-  minio: ^3.0.4
+  minio: ^3.5.8
   path_provider: ^2.1.4
   share_plus: ^10.0.2
   audioplayers: ^6.1.0
