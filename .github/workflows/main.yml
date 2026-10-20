@@ -19,11 +19,15 @@ jobs:
         with:
           channel: 'stable'
 
+      - name: Generate Fresh Android Project Scaffold
+        run: |
+          flutter create --platforms=android --org com.reels.pro .
+
       - name: Install Dependencies
         run: flutter pub get
 
-      - name: Build APK
-        run: flutter build apk --release
+      - name: Build APK (Release)
+        run: flutter build apk --release --no-tree-shake-icons
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
