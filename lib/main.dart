@@ -11,7 +11,7 @@ import 'package:ffmpeg_kit_flutter/ffmpeg_kit.dart';
 import 'package:ffmpeg_kit_flutter/return_code.dart';
 import 'package:path_provider/path_provider.dart';
 
-// --- CLOUDFLARE R2 CREDENTIALS (अपनी जानकारी यहाँ भरें) ---
+// --- CLOUDFLARE R2 CREDENTIALS ---
 const String r2Endpoint = "YOUR_ACCOUNT_ID.r2.cloudflarestorage.com";
 const String r2AccessKey = "YOUR_R2_ACCESS_KEY";
 const String r2SecretKey = "YOUR_R2_SECRET_KEY";
@@ -199,7 +199,7 @@ class SingleReelPlayer extends StatefulWidget {
 
 class _SingleReelPlayerState extends State<SingleReelPlayer>
     with SingleTickerProviderStateMixin {
-  late CachedVideoPlayerPlusController _controller;
+  late VideoPlayerPlusController _controller;
   late AnimationController _discAnimController;
   bool _isReady = false;
   bool _showBigHeart = false;
@@ -212,7 +212,7 @@ class _SingleReelPlayerState extends State<SingleReelPlayer>
     _discAnimController =
         AnimationController(vsync: this, duration: const Duration(seconds: 4))..repeat();
 
-    _controller = CachedVideoPlayerPlusController.networkUrl(
+    _controller = VideoPlayerPlusController.networkUrl(
       Uri.parse(widget.data.videoUrl),
       invalidateCacheIfOlderThan: const Duration(days: 7),
     )..initialize().then((_) {
@@ -295,7 +295,7 @@ class _SingleReelPlayerState extends State<SingleReelPlayer>
                   child: SizedBox(
                     width: _controller.value.size.width,
                     height: _controller.value.size.height,
-                    child: CachedVideoPlayerPlus(_controller),
+                    child: VideoPlayerPlus(_controller),
                   ),
                 )
               : const Center(
@@ -575,11 +575,9 @@ class _AdvancedCameraStudioState extends State<AdvancedCameraStudio> {
   String _processStatus = '';
   int _selectedFilterIndex = 0;
 
-  // म्यूजिक प्लेयर इंजन
   final AudioPlayer _audioPlayer = AudioPlayer();
   Map<String, String>? _selectedTrack;
 
-  // लाइव साउंड लाइब्रेरी
   final List<Map<String, String>> _musicLibrary = [
     {
       'title': 'No Music (Original Mic Audio)',
@@ -599,13 +597,12 @@ class _AdvancedCameraStudioState extends State<AdvancedCameraStudio> {
     },
   ];
 
-  // लाइव कलर फिल्टर्स
   final List<Color> _filters = [
     Colors.transparent,
-    Colors.amber.withOpacity(0.2), // Vintage Warm
-    Colors.blueAccent.withOpacity(0.18), // Cold Breeze
-    Colors.purpleAccent.withOpacity(0.18), // Cyberpunk
-    Colors.grey.withOpacity(0.35), // Noir B&W
+    Colors.amber.withOpacity(0.2),
+    Colors.blueAccent.withOpacity(0.18),
+    Colors.purpleAccent.withOpacity(0.18),
+    Colors.grey.withOpacity(0.35),
   ];
 
   @override
@@ -668,7 +665,6 @@ class _AdvancedCameraStudioState extends State<AdvancedCameraStudio> {
     );
   }
 
-  // FFmpeg ऑडियो-वीडियो मिक्सर और R2 अपलोड
   Future<void> _processAndUpload(String recordedVideoPath) async {
     setState(() {
       _isProcessing = true;
@@ -679,15 +675,13 @@ class _AdvancedCameraStudioState extends State<AdvancedCameraStudio> {
     String songTitle = _selectedTrack?['title'] ?? 'Original Audio';
 
     try {
-      // अगर यूजर ने म्यूजिक चुना है, तो FFmpeg से मिक्स करेंगे
       if (_selectedTrack != null && _selectedTrack!['url']!.isNotEmpty) {
         setState(() => _processStatus = 'बैकग्राउंड म्यूजिक मिक्स (Muxing) हो रहा है...');
-        
+
         final tempDir = await getTemporaryDirectory();
         final outputPath = '${tempDir.path}/muxed_${DateTime.now().millisecondsSinceEpoch}.mp4';
         final audioUrl = _selectedTrack!['url']!;
 
-        // FFmpeg कमांड: ओरिजिनल वीडियो का कैमरा वीडियो + नया बैकग्राउंड ऑडियो मिक्स
         final ffmpegCommand = '-i "$recordedVideoPath" -ss 00:00:00 -i "$audioUrl" -map 0:v -map 1:a -c:v copy -c:a aac -shortest "$outputPath"';
 
         final session = await FFmpegKit.execute(ffmpegCommand);
@@ -698,7 +692,6 @@ class _AdvancedCameraStudioState extends State<AdvancedCameraStudio> {
         }
       }
 
-      // Cloudflare R2 पर डायरेक्ट अपलोड
       setState(() => _processStatus = 'Cloudflare R2 पर डायरेक्ट अपलोड हो रहा है...');
 
       final minio = Minio(
@@ -710,8 +703,11 @@ class _AdvancedCameraStudioState extends State<AdvancedCameraStudio> {
 
       final String fileName = 'reel_${DateTime.now().millisecondsSinceEpoch}.mp4';
       final file = File(finalUploadPath);
+      final fileStream = file.openRead();
+      final fileSize = await file.length();
 
-      await minio.fPutObject(r2BucketName, fileName, file.path);
+      // Minio 3.5.8+ Compatible Stream API
+      await minio.putObject(r2BucketName, fileName, fileStream, size: fileSize);
       final String publicStreamUrl = "$r2PublicBaseUrl/$fileName";
 
       widget.onVideoUploaded(publicStreamUrl, songTitle);
@@ -768,18 +764,18 @@ class _AdvancedCameraStudioState extends State<AdvancedCameraStudio> {
           ),
           previewFit: CameraPreviewFit.cover,
           onMediaTap: (media) {
-            if (media.isVideo && media.filePath != null) {
-              _processAndUpload(media.filePath!);
+            // Camerawesome 2.5.0+ Compatible Media Path
+            final recordedPath = media.captureRequest.path;
+            if (media.isVideo && recordedPath != null) {
+              _processAndUpload(recordedPath);
             }
           },
         ),
 
-        // लाइव कलर शेड्स (फिल्टर ओवरले)
         IgnorePointer(
           child: Container(color: _filters[_selectedFilterIndex]),
         ),
 
-        // 1. टॉप म्यूजिक सेलेक्टर बार
         Positioned(
           top: 45,
           left: 0,
@@ -810,7 +806,6 @@ class _AdvancedCameraStudioState extends State<AdvancedCameraStudio> {
           ),
         ),
 
-        // 2. बॉटम लाइव फिल्टर स्विचर बार
         Positioned(
           bottom: 120,
           left: 0,
