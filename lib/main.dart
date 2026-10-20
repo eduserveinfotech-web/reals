@@ -1,7 +1,8 @@
 import 'dart:io';
 import 'dart:math' as math;
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
-import 'package:cached_video_player_plus/cached_video_player_plus.dart';
+import 'package:video_player/video_player.dart';
 import 'package:camerawesome/camerawesome_plugin.dart';
 import 'package:camerawesome/pigeon.dart';
 import 'package:minio/minio.dart';
@@ -67,28 +68,19 @@ class _AppShellState extends State<AppShell> {
       id: '1',
       videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-vertical-portrait-of-a-woman-in-a-field-of-sunflowers-42995-large.mp4',
       username: 'nature_lover',
-      caption: 'सनफ्लावर का खूबसूरत दृश्य 🌻✨ #nature #reels #trending',
+      caption: 'Sunflower field view 🌻✨ #nature #reels',
       songTitle: 'Original Audio - Nature Vibes',
       likes: 14200,
-      comments: ['अति सुंदर दृश्य! ❤️', 'शानदार वीडियो brother 🔥'],
+      comments: ['Superb! ❤️', 'Great video 🔥'],
     ),
     ReelData(
       id: '2',
       videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-young-woman-skater-doing-tricks-in-a-skatepark-42984-large.mp4',
       username: 'skate_king',
-      caption: 'New flip trick unlocked! 🛹🔥 10 में से कितने नंबर दोगे?',
+      caption: 'New flip trick unlocked! 🛹🔥 Rate 1 to 10',
       songTitle: 'Bass Boosted Beats - DJ Mix',
       likes: 98500,
       comments: ['10/10 bro! 🔥', 'Smooth landing 👌'],
-    ),
-    ReelData(
-      id: '3',
-      videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-tree-branches-in-the-breeze-1188-large.mp4',
-      username: 'peaceful_vibes',
-      caption: 'सुकून भरी शाम और ठंडी हवा 🍃🕊️ #peace #calm',
-      songTitle: 'Lofi Instrumental - SoundWave',
-      likes: 5410,
-      comments: ['बहुत ही शांत 😌'],
     ),
   ];
 
@@ -100,11 +92,11 @@ class _AppShellState extends State<AppShell> {
           id: DateTime.now().millisecondsSinceEpoch.toString(),
           videoUrl: uploadedUrl,
           username: 'creator_pro',
-          caption: 'मेरी नई रील! लाइक और शेयर करें 🔥 #newreel',
+          caption: 'My new reel! Like & Share 🔥 #newreel',
           songTitle: songName,
           likes: 1,
           isLiked: true,
-          comments: ['पहला कमेंट! 🔥'],
+          comments: ['First comment! 🔥'],
         ),
       );
       _tabIndex = 0;
@@ -199,7 +191,7 @@ class SingleReelPlayer extends StatefulWidget {
 
 class _SingleReelPlayerState extends State<SingleReelPlayer>
     with SingleTickerProviderStateMixin {
-  late VideoPlayerPlusController _controller;
+  late VideoPlayerController _controller;
   late AnimationController _discAnimController;
   bool _isReady = false;
   bool _showBigHeart = false;
@@ -212,9 +204,8 @@ class _SingleReelPlayerState extends State<SingleReelPlayer>
     _discAnimController =
         AnimationController(vsync: this, duration: const Duration(seconds: 4))..repeat();
 
-    _controller = VideoPlayerPlusController.networkUrl(
+    _controller = VideoPlayerController.networkUrl(
       Uri.parse(widget.data.videoUrl),
-      invalidateCacheIfOlderThan: const Duration(days: 7),
     )..initialize().then((_) {
         if (mounted) {
           setState(() => _isReady = true);
@@ -295,7 +286,7 @@ class _SingleReelPlayerState extends State<SingleReelPlayer>
                   child: SizedBox(
                     width: _controller.value.size.width,
                     height: _controller.value.size.height,
-                    child: VideoPlayerPlus(_controller),
+                    child: VideoPlayer(_controller),
                   ),
                 )
               : const Center(
@@ -591,10 +582,6 @@ class _AdvancedCameraStudioState extends State<AdvancedCameraStudio> {
       'title': 'Lofi Chill Vibes',
       'url': 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
     },
-    {
-      'title': 'Acoustic Guitar Sunshine',
-      'url': 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3',
-    },
   ];
 
   final List<Color> _filters = [
@@ -668,7 +655,7 @@ class _AdvancedCameraStudioState extends State<AdvancedCameraStudio> {
   Future<void> _processAndUpload(String recordedVideoPath) async {
     setState(() {
       _isProcessing = true;
-      _processStatus = 'ऑडियो और वीडियो प्रोसेस हो रहा है...';
+      _processStatus = 'Processing video & audio...';
     });
 
     String finalUploadPath = recordedVideoPath;
@@ -676,7 +663,7 @@ class _AdvancedCameraStudioState extends State<AdvancedCameraStudio> {
 
     try {
       if (_selectedTrack != null && _selectedTrack!['url']!.isNotEmpty) {
-        setState(() => _processStatus = 'बैकग्राउंड म्यूजिक मिक्स (Muxing) हो रहा है...');
+        setState(() => _processStatus = 'Muxing Background Music via FFmpeg...');
 
         final tempDir = await getTemporaryDirectory();
         final outputPath = '${tempDir.path}/muxed_${DateTime.now().millisecondsSinceEpoch}.mp4';
@@ -692,7 +679,7 @@ class _AdvancedCameraStudioState extends State<AdvancedCameraStudio> {
         }
       }
 
-      setState(() => _processStatus = 'Cloudflare R2 पर डायरेक्ट अपलोड हो रहा है...');
+      setState(() => _processStatus = 'Uploading to Cloudflare R2...');
 
       final minio = Minio(
         endPoint: r2Endpoint,
@@ -703,10 +690,9 @@ class _AdvancedCameraStudioState extends State<AdvancedCameraStudio> {
 
       final String fileName = 'reel_${DateTime.now().millisecondsSinceEpoch}.mp4';
       final file = File(finalUploadPath);
-      final fileStream = file.openRead();
+      final Stream<Uint8List> fileStream = file.openRead().map((chunk) => Uint8List.fromList(chunk));
       final fileSize = await file.length();
 
-      // Minio 3.5.8+ Compatible Stream API
       await minio.putObject(r2BucketName, fileName, fileStream, size: fileSize);
       final String publicStreamUrl = "$r2PublicBaseUrl/$fileName";
 
@@ -714,13 +700,13 @@ class _AdvancedCameraStudioState extends State<AdvancedCameraStudio> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('रील म्यूजिक के साथ सफलतापूर्वक लाइव हो गई! 🚀')),
+          const SnackBar(content: Text('Reel Uploaded to Cloudflare R2! 🚀')),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('प्रोसेस त्रुटि: $e')),
+          SnackBar(content: Text('Upload Error: $e')),
         );
       }
     } finally {
@@ -764,7 +750,6 @@ class _AdvancedCameraStudioState extends State<AdvancedCameraStudio> {
           ),
           previewFit: CameraPreviewFit.cover,
           onMediaTap: (media) {
-            // Camerawesome 2.5.0+ Compatible Media Path
             final recordedPath = media.captureRequest.path;
             if (media.isVideo && recordedPath != null) {
               _processAndUpload(recordedPath);
