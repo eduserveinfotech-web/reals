@@ -1,5 +1,5 @@
 name: reels_pro
-description: "Advanced Instagram Reels Clone with Audio Mixer and Filters"
+description: "Instagram Reels Clone"
 publish_to: "none"
 version: 1.0.0+1
 
@@ -9,7 +9,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  cached_video_player_plus: ^4.1.0
+  video_player: ^2.9.2
   camerawesome: ^2.4.0
   minio: ^3.5.8
   path_provider: ^2.1.4
