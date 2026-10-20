@@ -27,7 +27,6 @@ class ReelData {
   final String id;
   final String videoUrl;
   final String username;
-  final String avatarUrl;
   final String caption;
   final String songTitle;
   int likes;
@@ -39,7 +38,6 @@ class ReelData {
     required this.id,
     required this.videoUrl,
     required this.username,
-    required this.avatarUrl,
     required this.caption,
     required this.songTitle,
     required this.likes,
@@ -49,7 +47,7 @@ class ReelData {
   });
 }
 
-// ------------------- मुख्य शेल (Navigation) -------------------
+// ------------------- मुख्य नेविगेशन -------------------
 class AppShell extends StatefulWidget {
   const AppShell({super.key});
 
@@ -64,20 +62,18 @@ class _AppShellState extends State<AppShell> {
     ReelData(
       id: '1',
       videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-vertical-portrait-of-a-woman-in-a-field-of-sunflowers-42995-large.mp4',
-      username: 'nature_explorer',
-      avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
-      caption: 'सनफ्लावर का खूबसूरत दृश्य 🌻✨ #nature #viral #trending',
-      songTitle: 'Original Sound - nature_explorer',
+      username: 'nature_lover',
+      caption: 'सनफ्लावर का खूबसूरत दृश्य 🌻✨ #nature #reels #trending',
+      songTitle: 'Original Audio - Nature Vibes',
       likes: 14200,
-      comments: ['अति सुंदर! ❤️', 'शानदार नजारा brother 🔥', 'Camera quality is awesome!'],
+      comments: ['अति सुंदर दृश्य! ❤️', 'शानदार वीडियो brother 🔥'],
     ),
     ReelData(
       id: '2',
       videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-young-woman-skater-doing-tricks-in-a-skatepark-42984-large.mp4',
-      username: 'skate_master',
-      avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150',
-      caption: 'New flip trick unlocked! 🛹🔥 क्या लगता है 10 में से कितने नंबर दोगे?',
-      songTitle: 'Bass Boosted Beats - DJ Beats',
+      username: 'skate_king',
+      caption: 'New flip trick unlocked! 🛹🔥 10 में से कितने नंबर दोगे?',
+      songTitle: 'Bass Boosted Beats - DJ Mix',
       likes: 98500,
       comments: ['10/10 bro! 🔥', 'Smooth landing 👌'],
     ),
@@ -85,9 +81,8 @@ class _AppShellState extends State<AppShell> {
       id: '3',
       videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-tree-branches-in-the-breeze-1188-large.mp4',
       username: 'peaceful_vibes',
-      avatarUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150',
-      caption: 'सुकून भरी शाम 🍃☕ Tag someone who needs peace.',
-      songTitle: 'Lofi Chills - SoundWave',
+      caption: 'सुकून भरी शाम और ठंडी हवा 🍃🕊️ #peace #calm',
+      songTitle: 'Lofi Instrumental - SoundWave',
       likes: 5410,
       comments: ['बहुत ही शांत 😌'],
     ),
@@ -100,10 +95,9 @@ class _AppShellState extends State<AppShell> {
         ReelData(
           id: DateTime.now().millisecondsSinceEpoch.toString(),
           videoUrl: uploadedUrl,
-          username: 'my_channel',
-          avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150',
-          caption: 'मेरी नई रील! देखिए और लाइक कीजिए 🔥 #newreel',
-          songTitle: 'Original Audio - my_channel',
+          username: 'my_creator',
+          caption: 'मेरी नई रील! लाइक और शेयर करें 🔥 #newreel',
+          songTitle: 'Original Audio - my_creator',
           likes: 1,
           isLiked: true,
           comments: ['पहला कमेंट! 🔥'],
@@ -189,7 +183,7 @@ class _ReelsFeedViewState extends State<ReelsFeedView> {
   }
 }
 
-// ------------------- सिंगल रील प्लेयर & कंट्रोल्स -------------------
+// ------------------- सिंगल रील प्लेयर -------------------
 class SingleReelPlayer extends StatefulWidget {
   final ReelData data;
   final bool isActive;
@@ -291,7 +285,6 @@ class _SingleReelPlayerState extends State<SingleReelPlayer>
       child: Stack(
         fit: StackFit.expand,
         children: [
-          // 1. वीडियो कैनवस
           _isReady
               ? FittedBox(
                   fit: BoxFit.cover,
@@ -304,7 +297,7 @@ class _SingleReelPlayerState extends State<SingleReelPlayer>
               : const Center(
                   child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)),
 
-          // 2. सिनेमाई विगनेट शैडो
+          // सिनेमैटिक ग्रेडिएंट ओवरले
           Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
@@ -316,12 +309,12 @@ class _SingleReelPlayerState extends State<SingleReelPlayer>
             ),
           ),
 
-          // 3. म्यूट/अनम्यूट का ऑन-स्क्रीन इंडिकेटर
+          // म्यूट / अनम्यूट इंडिकेटर
           if (_showMuteBadge)
             Center(
               child: Container(
                 padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   color: Colors.black54,
                   shape: BoxShape.circle,
                 ),
@@ -330,7 +323,7 @@ class _SingleReelPlayerState extends State<SingleReelPlayer>
               ),
             ),
 
-          // 4. उछलता हुआ एनिमेटेड दिल
+          // उछलता दिल एनीमेशन
           if (_showBigHeart)
             Center(
               child: TweenAnimationBuilder<double>(
@@ -345,7 +338,7 @@ class _SingleReelPlayerState extends State<SingleReelPlayer>
               ),
             ),
 
-          // 5. यूजर इंफो और म्यूजिक बार (Bottom-Left)
+          // लेफ्ट साइड: यूजरनेम, कैप्शन, म्यूजिक
           Positioned(
             left: 14,
             bottom: 20,
@@ -355,9 +348,10 @@ class _SingleReelPlayerState extends State<SingleReelPlayer>
               children: [
                 Row(
                   children: [
-                    CircleAvatar(
-                      radius: 17,
-                      backgroundImage: NetworkUrlImage(widget.data.avatarUrl),
+                    const CircleAvatar(
+                      radius: 16,
+                      backgroundColor: Colors.white24,
+                      child: Icon(Icons.person, color: Colors.white, size: 18),
                     ),
                     const SizedBox(width: 8),
                     Text(
@@ -402,13 +396,12 @@ class _SingleReelPlayerState extends State<SingleReelPlayer>
             ),
           ),
 
-          // 6. साइडबार बटन्स (Right-Side Actions)
+          // राइट साइड: लाइक, कमेंट, शेयर, डिस्क
           Positioned(
             right: 12,
             bottom: 20,
             child: Column(
               children: [
-                // लाइक
                 IconButton(
                   icon: Icon(
                     widget.data.isLiked ? Icons.favorite : Icons.favorite_border,
@@ -427,7 +420,6 @@ class _SingleReelPlayerState extends State<SingleReelPlayer>
                         color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 14),
 
-                // कमेंट
                 IconButton(
                   icon: const Icon(Icons.chat_bubble_outline, color: Colors.white, size: 30),
                   onPressed: _openCommentsSheet,
@@ -437,11 +429,10 @@ class _SingleReelPlayerState extends State<SingleReelPlayer>
                         color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 14),
 
-                // शेयर
                 IconButton(
                   icon: const Icon(Icons.share_outlined, color: Colors.white, size: 30),
                   onPressed: () {
-                    Share.share('Check out this amazing Reel: ${widget.data.videoUrl}');
+                    Share.share('Check out this Reel: ${widget.data.videoUrl}');
                   },
                 ),
                 const Text('Share',
@@ -449,7 +440,6 @@ class _SingleReelPlayerState extends State<SingleReelPlayer>
                         color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 14),
 
-                // बुकमार्क
                 IconButton(
                   icon: Icon(
                     widget.data.isBookmarked ? Icons.bookmark : Icons.bookmark_border,
@@ -462,7 +452,7 @@ class _SingleReelPlayerState extends State<SingleReelPlayer>
                 ),
                 const SizedBox(height: 16),
 
-                // घूमती हुई म्यूजिक कैसेट डिस्क
+                // घूमती हुई डिस्क
                 AnimatedBuilder(
                   animation: _discAnimController,
                   builder: (_, child) {
@@ -573,7 +563,7 @@ class _CommentsDrawerState extends State<CommentsDrawer> {
   }
 }
 
-// ------------------- एडवांस्ड कैमरा स्टूडियो (Filters + Speeds + R2 Upload) -------------------
+// ------------------- एडवांस्ड कैमरा + लाइव फ़िल्टर्स + R2 अपलोड -------------------
 class AdvancedCameraStudio extends StatefulWidget {
   final Function(String) onVideoUploaded;
   const AdvancedCameraStudio({super.key, required this.onVideoUploaded});
@@ -584,22 +574,17 @@ class AdvancedCameraStudio extends StatefulWidget {
 
 class _AdvancedCameraStudioState extends State<AdvancedCameraStudio> {
   bool _isUploading = false;
-  double _uploadProgress = 0.0;
   int _selectedFilterIndex = 0;
 
-  // लाइव कलर शेड्स
   final List<Color> _filters = [
-    Colors.transparent, // नॉर्मल
-    Colors.amber.withOpacity(0.18), // वार्म सनसेट
-    Colors.blueAccent.withOpacity(0.15), // कूल विंटर
-    Colors.purpleAccent.withOpacity(0.15), // साइबरपंक
+    Colors.transparent,
+    Colors.amber.withOpacity(0.18),
+    Colors.blueAccent.withOpacity(0.15),
+    Colors.purpleAccent.withOpacity(0.15),
   ];
 
   Future<void> _uploadDirectToR2(String localPath) async {
-    setState(() {
-      _isUploading = true;
-      _uploadProgress = 0.1;
-    });
+    setState(() => _isUploading = true);
 
     try {
       final minio = Minio(
@@ -612,22 +597,19 @@ class _AdvancedCameraStudioState extends State<AdvancedCameraStudio> {
       final String fileName = 'reel_${DateTime.now().millisecondsSinceEpoch}.mp4';
       final file = File(localPath);
 
-      setState(() => _uploadProgress = 0.5);
       await minio.fPutObject(r2BucketName, fileName, file.path);
-      setState(() => _uploadProgress = 1.0);
-
       final String publicStreamUrl = "$r2PublicBaseUrl/$fileName";
       widget.onVideoUploaded(publicStreamUrl);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('रील Cloudflare R2 पर सफलतापूर्वक लाइव हो गई! 🚀')),
+          const SnackBar(content: Text('रील Cloudflare R2 पर लाइव हो गई! 🚀')),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('अपलोड विफल: $e')),
+          SnackBar(content: Text('अपलोड एरर: $e')),
         );
       }
     } finally {
@@ -638,18 +620,16 @@ class _AdvancedCameraStudioState extends State<AdvancedCameraStudio> {
   @override
   Widget build(BuildContext context) {
     if (_isUploading) {
-      return Scaffold(
+      return const Scaffold(
         backgroundColor: Colors.black,
         body: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const CircularProgressIndicator(color: Colors.orangeAccent),
-              const SizedBox(height: 20),
-              Text(
-                'Cloudflare R2 पर डायरेक्ट अपलोड हो रहा है... ${(_uploadProgress * 100).toInt()}%',
-                style: const TextStyle(color: Colors.white, fontSize: 14),
-              ),
+              CircularProgressIndicator(color: Colors.orangeAccent),
+              SizedBox(height: 20),
+              Text('Cloudflare R2 पर डायरेक्ट अपलोड जारी है...',
+                  style: TextStyle(color: Colors.white, fontSize: 14)),
             ],
           ),
         ),
@@ -658,7 +638,6 @@ class _AdvancedCameraStudioState extends State<AdvancedCameraStudio> {
 
     return Stack(
       children: [
-        // कैमरा प्रिव्यू
         CameraAwesomeBuilder.awesome(
           saveConfig: SaveConfig.video(
             videoOptions: VideoOptions(enableAudio: true),
@@ -672,12 +651,12 @@ class _AdvancedCameraStudioState extends State<AdvancedCameraStudio> {
           },
         ),
 
-        // लाइव कलर शेड ओवरले (फिल्टर)
+        // लाइव कलर शेड्स (फिल्टर)
         IgnorePointer(
           child: Container(color: _filters[_selectedFilterIndex]),
         ),
 
-        // टॉप फिल्टर स्विचर
+        // टॉप फिल्टर स्विच बटन
         Positioned(
           top: 45,
           left: 0,
