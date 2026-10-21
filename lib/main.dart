@@ -939,7 +939,7 @@ class _ReelItemState extends State<ReelItem> with SingleTickerProviderStateMixin
   Future<void> _init() async {
     try {
       final r = widget.reel;
-      const opts = VideoPlayerOptions(mixWithOthers: true);
+      final opts = VideoPlayerOptions(mixWithOthers: true);
       VideoPlayerController c;
       if (r.isLocal) {
         c = VideoPlayerController.file(File(r.videoUrl), videoPlayerOptions: opts);
@@ -3703,7 +3703,7 @@ class ComposePage extends StatefulWidget {
 }
 
 class _ComposePageState extends State<ComposePage> {
-  late final VideoPlayerController _vc = VideoPlayerController.file(File(widget.path), videoPlayerOptions: const VideoPlayerOptions(mixWithOthers: true));
+  late final VideoPlayerController _vc = VideoPlayerController.file(File(widget.path), videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true));
   AudioPlayer? _audio;
   Track? _track;
   late int _filter = widget.filter;
