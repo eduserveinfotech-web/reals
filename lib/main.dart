@@ -4091,14 +4091,41 @@ class ReelsProApp extends StatelessWidget {
 }
 
 Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-    statusBarColor: Colors.transparent,
-    statusBarIconBrightness: Brightness.light,
-    systemNavigationBarColor: Colors.black,
-    systemNavigationBarIconBrightness: Brightness.light,
-  ));
-  await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
-  await store.load();
-  runApp(const ReelsProApp());
+  runZonedGuarded(() async {
+    WidgetsFlutterBinding.ensureInitialized();
+    // Koi bhi error aaye to white screen ki jagah error text dikhe
+    ErrorWidget.builder = (details) => Material(
+          color: Colors.black,
+          child: SafeArea(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Text('ERROR:\n${details.exceptionAsString()}\n\n${details.stack}',
+                  style: const TextStyle(color: Colors.redAccent, fontSize: 12)),
+            ),
+          ),
+        );
+    try {
+      SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
+        systemNavigationBarColor: Colors.black,
+        systemNavigationBarIconBrightness: Brightness.light,
+      ));
+      await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+      await store.load();
+      runApp(const ReelsProApp());
+    } catch (e, st) {
+      runApp(MaterialApp(
+        home: Scaffold(
+          backgroundColor: Colors.black,
+          body: SafeArea(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Text('STARTUP ERROR:\n$e\n\n$st', style: const TextStyle(color: Colors.redAccent, fontSize: 12)),
+            ),
+          ),
+        ),
+      ));
+    }
+  }, (e, st) => debugPrint('Uncaught: $e\n$st'));
 }
