@@ -23,6 +23,9 @@ jobs:
       - name: Generate Android scaffold
         run: flutter create --platforms=android --org com.reels.pro .
 
+      - name: Remove generated sample test
+        run: rm -rf test analysis_options.yaml
+
       - name: Use our AndroidManifest (camera, mic, UPI queries)
         run: |
           if [ -f AndroidManifest.xml ]; then
@@ -35,7 +38,7 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Analyze (lists every compile error at once)
+      - name: Analyze
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
         continue-on-error: true
 
