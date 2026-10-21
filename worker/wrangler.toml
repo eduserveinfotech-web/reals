@@ -1,0 +1,11 @@
+name = "reels-upload"
+main = "worker.js"
+compatibility_date = "2025-01-01"
+
+[[r2_buckets]]
+binding = "BUCKET"
+bucket_name = "my-reels-bucket"
+
+[vars]
+# R2 bucket ka public URL (r2.dev ya custom domain), bina trailing slash ke
+PUBLIC_BASE = "https://pub-xxxx.r2.dev"
