@@ -1,21 +1,30 @@
 name: reels_pro
-description: "Instagram Reels Clone"
+description: "Reels Pro - Instagram-style short video app with stories, DMs, filters, sounds, insights and UPI support"
 publish_to: "none"
-version: 1.0.0+1
+version: 2.0.0+2
 
 environment:
-  sdk: ">=3.0.0 <4.0.0"
+  sdk: ">=3.4.0 <4.0.0"
 
 dependencies:
   flutter:
     sdk: flutter
+
+  # video + audio
   video_player: ^2.9.2
-  camerawesome: ^2.4.0
-  minio: ^3.5.8
-  path_provider: ^2.1.4
-  share_plus: ^10.0.2
   audioplayers: ^6.1.0
-  ffmpeg_kit_flutter: ^6.0.3
+  flutter_cache_manager: ^3.4.1
+
+  # camera + gallery
+  camera: ^0.11.0
+  image_picker: ^1.1.2
+
+  # storage / network / sharing
+  shared_preferences: ^2.3.2
+  path_provider: ^2.1.4
+  http: ^1.2.2
+  share_plus: ^10.1.4
+  url_launcher: ^6.3.1
 
 flutter:
   uses-material-design: true
