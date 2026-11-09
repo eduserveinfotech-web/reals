@@ -54,6 +54,49 @@ const List<List<Color>> kStoryBg = [
   [Color(0xFFEE0979), Color(0xFFFF6A00)],
   [Color(0xFF396AFC), Color(0xFF2948FF)],
 ];
+// ============================== BRAND LOGO ==================================
+class ReelsBrandLogo extends StatelessWidget {
+  final double size;
+  final bool showText;
+  const ReelsBrandLogo({super.key, this.size = 28, this.showText = true});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: size,
+          height: size,
+          decoration: BoxDecoration(
+            gradient: kBrand,
+            borderRadius: BorderRadius.circular(size * 0.28),
+            boxShadow: const [BoxShadow(color: Colors.black45, blurRadius: 4, offset: Offset(0, 2))],
+          ),
+          child: Center(
+            child: Icon(Icons.play_arrow_rounded, color: Colors.white, size: size * 0.72),
+          ),
+        ),
+        if (showText) ...[
+          const SizedBox(width: 8),
+          ShaderMask(
+            shaderCallback: (r) => kBrandBtn.createShader(r),
+            child: Text(
+              'Reels Pro',
+              style: TextStyle(
+                fontFamily: 'sans-serif',
+                fontWeight: FontWeight.w900,
+                fontSize: size * 0.78,
+                color: Colors.white,
+                letterSpacing: -0.5,
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
 
 // ============================== HELPERS =====================================
 int nowMs() => DateTime.now().millisecondsSinceEpoch;
@@ -409,7 +452,19 @@ class AppStore extends ChangeNotifier {
     feedEpoch++;
     changed();
   }
-
+void createNewAccount({required String name, required String username, required String bio, required int color, String upi = ''}) {
+    me.name = name;
+    me.username = username.toLowerCase();
+    me.bio = bio;
+    me.color = color;
+    if (upi.isNotEmpty) me.upiId = upi;
+    notifs.insert(
+      0,
+      Notif(id: newId(), type: 'system', userId: meId, text: 'Welcome @$username! Account setup complete 🚀', at: nowMs(), read: false),
+    );
+    feedEpoch++;
+    changed();
+  }
   // ---------- demo seed ----------
   void _seed() {
     users.clear();
@@ -1422,6 +1477,44 @@ class _ReelItemState extends State<ReelItem> with SingleTickerProviderStateMixin
             _action(const Icon(Icons.mode_comment_outlined, size: 29, color: Colors.white, shadows: kTextShadow),
                 r.commentsOff ? '' : fmtCount(r.commentCount), _openComments),
             _action(const Icon(Icons.send_outlined, size: 29, color: Colors.white, shadows: kTextShadow), fmtCount(r.shares), _openShare),
+            _action(
+              const Icon(Icons.download_rounded, size: 30, color: Colors.white, shadows: kTextShadow),
+              'Save',
+              () {
+                toast(context, 'Downloading video with @${author.username} & Reels Pro watermark...');
+                store.countShare(r);
+                showDialog(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    backgroundColor: kSheet,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    title: const Row(children: [
+                      Icon(Icons.check_circle, color: Color(0xFF38EF7D)),
+                      SizedBox(width: 8),
+                      Text('Video Saved!'),
+                    ]),
+                    content: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Video saved to gallery with watermark:'),
+                        const SizedBox(height: 12),
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(color: Colors.white10, borderRadius: BorderRadius.circular(10)),
+                          child: Row(children: [
+                            const ReelsBrandLogo(size: 20, showText: false),
+                            const SizedBox(width: 8),
+                            Text('@${author.username}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                          ]),
+                        ),
+                      ],
+                    ),
+                    actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('OK'))],
+                  ),
+                );
+              },
+            ),
             _action(Icon(r.saved ? Icons.bookmark : Icons.bookmark_border, size: 30, color: Colors.white, shadows: kTextShadow), '', () => store.toggleSave(r)),
             _action(const Icon(Icons.more_horiz, size: 28, color: Colors.white, shadows: kTextShadow), '', _openMore),
             const SizedBox(height: 6),
@@ -2079,10 +2172,10 @@ class StoriesTray extends StatelessWidget {
             _item(
               ctx,
               store.me,
-              () => store.hasStory(AppStore.meId) ? openPage<void>(ctx, const StoryViewer(userIds: [AppStore.meId])) : openPage<void>(ctx, const StoryComposer()),
+              () => store.hasStory(AppStore.meId) ? openPage<void>(ctx, const StoryViewer(userIds: [AppStore.meId])) : openPage<void>(ctx, StoryComposer()),
               me: true,
               badge: GestureDetector(
-                onTap: () => openPage<void>(ctx, const StoryComposer()),
+                onTap: () => openPage<void>(ctx, StoryComposer()),
                 child: Container(
                   padding: const EdgeInsets.all(2),
                   decoration: BoxDecoration(color: const Color(0xFF3897F0), shape: BoxShape.circle, border: Border.all(color: Colors.black, width: 2)),
@@ -2658,7 +2751,46 @@ class _ProfilePageState extends State<ProfilePage> {
               if (u.verified) const Padding(padding: EdgeInsets.only(left: 6), child: VerifiedBadge()),
             ]),
             actions: [
-              if (mine) IconButton(icon: const Icon(Icons.menu), onPressed: () => openPage<void>(ctx, const SettingsPage())),
+              if (mine)
+                IconButton(
+                  icon: const Icon(Icons.person_add_alt_1_rounded),
+                  tooltip: 'Create New Profile',
+                  onPressed: () => showDialog(
+                    context: ctx,
+                    builder: (c) {
+                      final n = TextEditingController();
+                      final u = TextEditingController();
+                      final b = TextEditingController();
+                      return AlertDialog(
+                        backgroundColor: kSheet,
+                        title: const Text('Create New Account'),
+                        content: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            TextField(controller: n, decoration: const InputDecoration(labelText: 'Name')),
+                            TextField(controller: u, decoration: const InputDecoration(labelText: 'Username')),
+                            TextField(controller: b, decoration: const InputDecoration(labelText: 'Bio')),
+                          ],
+                        ),
+                        actions: [
+                          TextButton(onPressed: () => Navigator.pop(c), child: const Text('Cancel')),
+                          TextButton(
+                            onPressed: () {
+                              if (u.text.trim().isNotEmpty) {
+                                store.createNewAccount(name: n.text.trim(), username: u.text.trim(), bio: b.text.trim(), color: 0xFFE1306C);
+                                Navigator.pop(c);
+                                toast(ctx, 'Account created!');
+                              }
+                            },
+                            child: const Text('Create'),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                ),
+              if (mine) IconButton(icon: const Icon(Icons.menu), onPressed: () => openPage<void>(ctx, SettingsPage())),
+              
               if (!mine) IconButton(icon: const Icon(Icons.more_horiz), onPressed: () => toast(ctx, 'Block / report options need an account backend')),
             ],
           ),
@@ -2669,7 +2801,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Row(children: [
                     GestureDetector(
-                      onTap: store.hasStory(u.id) ? () => openPage<void>(ctx, StoryViewer(userIds: [u.id])) : (mine ? () => openPage<void>(ctx, const StoryComposer()) : null),
+                      onTap: store.hasStory(u.id) ? () => openPage<void>(ctx, StoryViewer(userIds: [u.id])) : (mine ? () => openPage<void>(ctx, StoryComposer()) : null),
                       child: Avatar(u, size: 84, ring: store.hasStory(u.id), seen: store.hasStory(u.id) && store.allViewed(u.id)),
                     ),
                     Expanded(
@@ -2686,11 +2818,11 @@ class _ProfilePageState extends State<ProfilePage> {
                   const SizedBox(height: 14),
                   if (mine)
                     Row(children: [
-                      _btn('Edit profile', () => openPage<void>(ctx, const EditProfilePage())),
+                      _btn('Edit profile', () => openPage<void>(ctx, EditProfilePage())),
                       const SizedBox(width: 8),
-                      _btn('Insights', () => openPage<void>(ctx, const InsightsPage())),
+                      _btn('Insights', () => openPage<void>(ctx, InsightsPage())),
                       const SizedBox(width: 8),
-                      _btn('Add story', () => openPage<void>(ctx, const StoryComposer())),
+                      _btn('Add story', () => openPage<void>(ctx, StoryComposer())),
                     ])
                   else
                     Row(children: [
@@ -3240,8 +3372,8 @@ class _SettingsPageState extends State<SettingsPage> {
         appBar: AppBar(title: const Text('Settings')),
         body: ListView(children: [
           _head('ACCOUNT'),
-          ListTile(leading: const Icon(Icons.person_outline), title: const Text('Edit profile'), onTap: () => openPage<void>(ctx, const EditProfilePage())),
-          ListTile(leading: const Icon(Icons.insights), title: const Text('Creator insights'), onTap: () => openPage<void>(ctx, const InsightsPage())),
+          ListTile(leading: const Icon(Icons.person_outline), title: const Text('Edit profile'), onTap: () => openPage<void>(ctx, EditProfilePage())),
+          ListTile(leading: const Icon(Icons.insights), title: const Text('Creator insights'), onTap: () => openPage<void>(ctx, InsightsPage())),
           _head('FEED & DATA'),
           SwitchListTile(
             secondary: const Icon(Icons.data_saver_on),
@@ -3973,7 +4105,7 @@ class _HomeShellState extends State<HomeShell> {
   int _tab = 0;
 
   Future<void> _openCamera() async {
-    final ok = await Navigator.of(context).push<bool>(MaterialPageRoute<bool>(builder: (_) => const CameraPage()));
+    final ok = await Navigator.of(context).push<bool>(MaterialPageRoute<bool>(builder: (_) => CameraPage()));
     if (ok == true && mounted) {
       setState(() => _tab = 0);
       toast(context, 'Your reel is live 🎉');
@@ -4058,9 +4190,9 @@ class _HomeShellState extends State<HomeShell> {
         backgroundColor: Colors.black,
         body: IndexedStack(index: _tab, children: [
           FeedPage(active: _tab == 0, onOpenCamera: _openCamera),
-          const ExplorePage(),
+          ExplorePage(),
           const SizedBox.shrink(),
-          const InboxPage(),
+          InboxPage(),
           const ProfilePage(userId: AppStore.meId, isTab: true),
         ]),
         bottomNavigationBar: _nav(),
