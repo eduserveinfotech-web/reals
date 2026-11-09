@@ -10,16 +10,16 @@ dependencies:
   flutter:
     sdk: flutter
 
-  # Video & Audio
+  # video + audio
   video_player: ^2.9.2
   audioplayers: ^6.1.0
   flutter_cache_manager: ^3.4.1
 
-  # Camera & Media Picker
+  # camera + gallery
   camera: ^0.11.0
   image_picker: ^1.1.2
 
-  # Storage, Network & Utilities
+  # storage / network / sharing
   shared_preferences: ^2.3.2
   path_provider: ^2.1.4
   http: ^1.2.2
