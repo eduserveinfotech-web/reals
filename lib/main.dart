@@ -4193,7 +4193,7 @@ class _HomeShellState extends State<HomeShell> {
           ExplorePage(),
           const SizedBox.shrink(),
           InboxPage(),
-          const ProfilePage(userId: AppStore.meId, isTab: true),
+          ProfilePage(userId: AppStore.meId, isTab: true),
         ]),
         bottomNavigationBar: _nav(),
       ),
