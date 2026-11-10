@@ -21,7 +21,7 @@ jobs:
           cache: true
 
       - name: Generate Android scaffold
-        run: flutter create --platforms=android --org com.reels.pro .
+        run: flutter create --platforms=android --org com.reels.pro --project-name reels_pro .
 
       - name: Remove generated sample test
         run: rm -rf test analysis_options.yaml
@@ -29,7 +29,10 @@ jobs:
       - name: Set minSdk 24
         run: |
           for f in android/app/build.gradle.kts android/app/build.gradle; do
-            [ -f "$f" ] && sed -i -E 's/flutter\.minSdkVersion/24/; s/minSdk(Version)?\s*=?\s*[0-9]+/minSdk = 24/' "$f" && echo "patched $f"
+            if [ -f "$f" ]; then
+              sed -i -E 's/flutter\.minSdkVersion/24/; s/minSdk(Version)?\s*=?\s*[0-9]+/minSdk = 24/' "$f"
+              echo "Patched minSdk in $f"
+            fi
           done
 
       - name: Use our AndroidManifest (camera, mic, UPI queries)
@@ -37,8 +40,11 @@ jobs:
           if [ -f AndroidManifest.xml ]; then
             cp AndroidManifest.xml android/app/src/main/AndroidManifest.xml
             echo "Manifest copied from repo root"
+          elif [ -f android/app/src/main/AndroidManifest.custom.xml ]; then
+            cp android/app/src/main/AndroidManifest.custom.xml android/app/src/main/AndroidManifest.xml
+            echo "Copied AndroidManifest.custom.xml"
           else
-            echo "No AndroidManifest.xml in repo root - keeping the default one"
+            echo "Using default AndroidManifest"
           fi
 
       - name: Install dependencies
