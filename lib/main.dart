@@ -4190,9 +4190,9 @@ class _HomeShellState extends State<HomeShell> {
         backgroundColor: Colors.black,
         body: IndexedStack(index: _tab, children: [
           FeedPage(active: _tab == 0, onOpenCamera: _openCamera),
-          ExplorePage(),
+          const ExplorePage(),
           const SizedBox.shrink(),
-          InboxPage(),
+          const InboxPage(),
           ProfilePage(userId: AppStore.meId, isTab: true),
         ]),
         bottomNavigationBar: _nav(),
